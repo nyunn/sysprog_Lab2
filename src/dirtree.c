@@ -103,6 +103,222 @@ static int dirent_compare(const void *a, const void *b)
 void processDir(const char *dn, unsigned int depth, struct summary *stats, unsigned int flags)
 {
   // TODO
+
+  DIR *dir = opendir(dn);
+  struct dirent *e;
+
+  if (flags & F_DIRONLY) {
+    while ((e = readdir(dir)) != NULL) {
+      //ignore special character
+      if (strcmp(".", e->d_name) == 0 || strcmp("..", e->d_name) == 0) continue;
+      //print the directory name
+      printf("%-54s\n", e->d_name);
+
+      //recursively load lower directory
+      struct stat sb;
+      char *nextPath;
+      strcpy(nextPath, dn);
+      strcat(nextPath, "/");
+      strcat(nextPath, e->d_name);
+
+      if (lstat(nextPath, &sb) < 0) {
+        perror("function call failed"); //error handling
+      } else if (S_ISDIR(sb.st_mode)) {
+        processDir(nextPath, depth + 1, stats, flags);
+      }
+    }
+  }
+  else if (flags & F_VERBOSE) {
+    while ((e = readdir(dir)) != NULL) {
+      //ignore special character
+      if (strcmp(".", e->d_name) == 0 || strcmp("..", e->d_name) == 0) continue;
+      //print the directory name
+      printf("%-54s\n", e->d_name);
+      //print the names of user and group
+      struct stat sb;
+      if (stat(dn, &sb) == -1) {
+        perror("Cannot stat file"); //error handling
+        continue;
+      }
+      struct passwd *userInfo = getpwuid(sb.st_uid);
+      struct group *groupInfo = getgrgid(sb.st_gid);
+
+      if (userInfo == NULL) {
+        perror("no uid"); //error handling
+        continue;
+      }
+      if (groupInfo == NULL) {
+        perror("no gid"); //error handling
+        continue;
+      }
+
+      printf("%5s:%s", userInfo->pw_name, groupInfo->gr_name);
+
+      //print the size
+      printf("%5d", sb.st_size);
+
+      //print the permissions (read, write, excute)
+      //user
+      if (sb.st_mode & S_IRUSR) { //read
+        printf(" r");
+      } else printf(" -");
+      if (sb.st_mode & S_IWUSR) { //write
+        printf("w");
+      } else printf("-");
+      if (sb.st_mode & S_IXUSR) { //execute
+        printf("x");
+      } else printf("-");
+      //group
+      if (sb.st_mode & S_IRGRP) { //read
+        printf(" r");
+      } else printf(" -");
+      if (sb.st_mode & S_IWGRP) { //write
+        printf("w");
+      } else printf("-");
+      if (sb.st_mode & S_IXGRP) { //execute
+        printf("x");
+      } else printf("-");
+      //others
+      if (sb.st_mode & S_IROTH) { //read
+        printf(" r");
+      } else printf(" -");
+      if (sb.st_mode & S_IWOTH) { //write
+        printf("w");
+      } else printf("-");
+      if (sb.st_mode & S_IXOTH) { //execute
+        printf("x");
+      } else printf("-");
+
+      //print the type
+      if (S_ISDIR(sb.st_mode)) {
+        printf("  d");
+
+      } else if (S_ISLNK(sb.st_mode)) {
+        printf("  l");
+      } else if (S_ISCHR(sb.st_mode)) {
+        printf("  c");
+      } else if (S_ISBLK(sb.st_mode)) {
+        printf("  b");
+      } else if (S_ISFIFO(sb.st_mode)) {
+        printf("  f");
+      } else if (S_ISSOCK(sb.st_mode)) {
+        printf("  s");
+      }
+
+      //recursively load lower directory
+      struct stat sb2;
+      char *nextPath;
+      strcpy(nextPath, dn);
+      strcat(nextPath, "/");
+      strcat(nextPath, e->d_name);
+
+      if (lstat(nextPath, &sb2) < 0) {
+        perror("function call failed"); //error handling
+      } else if (S_ISDIR(sb2.st_mode)) {
+        processDir(nextPath, depth + 1, stats, flags);
+      }
+    }
+  }
+  else if (flags & F_SUMMARY) {
+    while ((e = readdir(dir)) != NULL) {
+      //ignore special character
+      if (strcmp(".", e->d_name) == 0 || strcmp("..", e->d_name) == 0) continue;
+      //print the directory name
+      printf("%-54s\n", e->d_name);
+      //print the names of user and group
+      struct stat sb;
+      if (stat(dn, &sb) == -1) {
+        perror("Cannot stat file"); //error handling
+        continue;
+      }
+      struct passwd *userInfo = getpwuid(sb.st_uid);
+      struct group *groupInfo = getgrgid(sb.st_gid);
+
+      if (userInfo == NULL) {
+        perror("no uid"); //error handling
+        continue;
+      }
+      if (groupInfo == NULL) {
+        perror("no gid"); //error handling
+        continue;
+      }
+
+      printf("%5s:%s", userInfo->pw_name, groupInfo->gr_name);
+
+      //print the size
+      printf("%5d", sb.st_size);
+      stats->size += sb.st_size;
+
+      //print the permissions (read, write, excute)
+      //user
+      if (sb.st_mode & S_IRUSR) { //read
+        printf(" r");
+      } else printf(" -");
+      if (sb.st_mode & S_IWUSR) { //write
+        printf("w");
+      } else printf("-");
+      if (sb.st_mode & S_IXUSR) { //execute
+        printf("x");
+      } else printf("-");
+      //group
+      if (sb.st_mode & S_IRGRP) { //read
+        printf(" r");
+      } else printf(" -");
+      if (sb.st_mode & S_IWGRP) { //write
+        printf("w");
+      } else printf("-");
+      if (sb.st_mode & S_IXGRP) { //execute
+        printf("x");
+      } else printf("-");
+      //others
+      if (sb.st_mode & S_IROTH) { //read
+        printf(" r");
+      } else printf(" -");
+      if (sb.st_mode & S_IWOTH) { //write
+        printf("w");
+      } else printf("-");
+      if (sb.st_mode & S_IXOTH) { //execute
+        printf("x");
+      } else printf("-");
+
+      //print the type
+      if (S_ISDIR(sb.st_mode)) {
+        printf("  d");
+        stats->dirs++;
+      } else if (S_ISLNK(sb.st_mode)) {
+        printf("  l");
+        stats->links++;
+      } else if (S_ISCHR(sb.st_mode)) {
+        printf("  c");
+      } else if (S_ISBLK(sb.st_mode)) {
+        printf("  b");
+      } else if (S_ISFIFO(sb.st_mode)) {
+        printf("  f");
+        stats->fifos++;
+      } else if (S_ISSOCK(sb.st_mode)) {
+        printf("  s");
+        stats->socks++;
+      } else {
+        stats->files++;
+      }
+
+      //recursively load lower directory
+      struct stat sb2;
+      char *nextPath;
+      strcpy(nextPath, dn);
+      strcat(nextPath, "/");
+      strcat(nextPath, e->d_name);
+
+      if (lstat(nextPath, &sb2) < 0) {
+        perror("function call failed"); //error handling
+      } else if (S_ISDIR(sb2.st_mode)) {
+        processDir(nextPath, depth + 1, stats, flags);
+      }
+    }
+    
+  }
+
+  closedir(dir);
 }
 
 
@@ -193,7 +409,15 @@ int main(int argc, char *argv[])
   //   - call processDir() for the directory
   //   - if F_SUMMARY flag set: print summary & update statistics
   memset(&tstat, 0, sizeof(tstat));
-  //...
+  for (int i=0; i<ndir; i++) {
+    //calculate depth
+    char *ptr = directories[i];
+    int depth = 0;
+    while (*ptr != '\0') {
+      if (*ptr == '/') depth++;
+    }
+    processDir(directories[i], depth, &tstat, flags);
+  }
 
 
   //
