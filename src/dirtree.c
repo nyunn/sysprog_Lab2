@@ -103,222 +103,218 @@ static int dirent_compare(const void *a, const void *b)
 void processDir(const char *dn, unsigned int depth, struct summary *stats, unsigned int flags)
 {
   // TODO
-
   DIR *dir = opendir(dn);
   struct dirent *e;
+  struct dirent *directories[64];
 
+  int index=0;
+  while ((e = readdir(dir) != NULL)) {
+    //ignore special character
+    if (strcmp(".", e->d_name) == 0 || strcmp("..", e->d_name) == 0) continue;
+    //save the directory entry
+    directories[index++] = e;
+  }
+
+  //print if summary mode
+  if ((flags & F_SUMMARY) && (depth == 0)) {
+    printf("Name                                                                 User:Group           Size     Perms Type\n");
+    printf("--------------------------------------------------------------------------------------------------------------\n")
+  }
+
+  //sort
+  qsort(directories, directories + index, dirent_compare);
+  //print if dironly mode
   if (flags & F_DIRONLY) {
-    while ((e = readdir(dir)) != NULL) {
-      //ignore special character
-      if (strcmp(".", e->d_name) == 0 || strcmp("..", e->d_name) == 0) continue;
-      //print the directory name
-      printf("%-54s\n", e->d_name);
-
-      //recursively load lower directory
+    for (int j=0; j<index; j++) {
       struct stat sb;
-      char *nextPath;
-      strcpy(nextPath, dn);
-      strcat(nextPath, "/");
-      strcat(nextPath, e->d_name);
-
-      if (lstat(nextPath, &sb) < 0) {
-        perror("function call failed"); //error handling
-      } else if (S_ISDIR(sb.st_mode)) {
-        processDir(nextPath, depth + 1, stats, flags);
+      char full_path[256];
+      snprintf(full_path, sizeof(full_path), "%s/%s", dn, directories[j]->d_name);
+      if (stat(full_path, &sb) == -1) {
+          printf("Cannot stat file.\n");
+          continue;
       }
+      if (S_ISDIR(sb.st_mode)) printf("%s", directories[j]->d_name);
+      else continue;
+      //print if verbose mode
+      if (flags & F_VERBOSE) {
+          struct passwd *userInfo = getpwuid(sb.st_uid);
+          struct group *groupInfo = getgrgid(sb.st_gid);
+
+          if (userInfo == NULL) {
+            perror("Permission denied.\n"); //error handling
+            continue;
+          }
+          if (groupInfo == NULL) {
+            perror("Permission denied.\n"); //error handling
+            continue;
+          }
+
+          printf("%5s:%s", userInfo->pw_name, groupInfo->gr_name);
+
+          //print the size
+          printf("%5d", sb.st_size);
+
+          //print the permissions (read, write, excute)
+          //user
+          if (sb.st_mode & S_IRUSR) { //read
+            printf(" r");
+          } else printf(" -");
+          if (sb.st_mode & S_IWUSR) { //write
+            printf("w");
+          } else printf("-");
+          if (sb.st_mode & S_IXUSR) { //execute
+            printf("x");
+          } else printf("-");
+          //group
+          if (sb.st_mode & S_IRGRP) { //read
+            printf("r");
+          } else printf("-");
+          if (sb.st_mode & S_IWGRP) { //write
+            printf("w");
+          } else printf("-");
+          if (sb.st_mode & S_IXGRP) { //execute
+            printf("x");
+          } else printf("-");
+          //others
+          if (sb.st_mode & S_IROTH) { //read
+            printf("r");
+          } else printf("-");
+          if (sb.st_mode & S_IWOTH) { //write
+            printf("w");
+          } else printf("-");
+          if (sb.st_mode & S_IXOTH) { //execute
+            printf("x");
+          } else printf("-");
+
+          //print the type
+          printf(" d");
+      }
+      printf("\n");
+      //print recursively
+      DIR *dir_tmp;
+      dir_tmp = opendir(full_path);
+      if (getNext(dir_tmp) != NULL) {
+        processDir(full_path, depth + 1, stats, flags);
+      }
+      closedir(dir_tmp);
+    }
+  } else { //except dironly mode
+    for (int j=0; j<index; j++) {
+      struct stat sb;
+      char full_path[256];
+      snprintf(full_path, sizeof(full_path), "%s/%s", dn, directories[j]->d_name);
+      if (stat(full_path, &sb) == -1) {
+          printf("Cannot stat file.\n");
+          continue;
+      }
+
+      printf("%s", directories[j]->d_name);
+      //print if verbose mode
+      if (flags & F_VERBOSE) {
+          struct passwd *userInfo = getpwuid(sb.st_uid);
+          struct group *groupInfo = getgrgid(sb.st_gid);
+
+          if (userInfo == NULL) {
+            perror("Permission denied.\n"); //error handling
+            continue;
+          }
+          if (groupInfo == NULL) {
+            perror("Permission denied.\n"); //error handling
+            continue;
+          }
+
+          printf("%5s:%s", userInfo->pw_name, groupInfo->gr_name);
+
+          //print the size
+          printf("%5d", sb.st_size);
+
+          //print the permissions (read, write, excute)
+          //user
+          if (sb.st_mode & S_IRUSR) { //read
+            printf(" r");
+          } else printf(" -");
+          if (sb.st_mode & S_IWUSR) { //write
+            printf("w");
+          } else printf("-");
+          if (sb.st_mode & S_IXUSR) { //execute
+            printf("x");
+          } else printf("-");
+          //group
+          if (sb.st_mode & S_IRGRP) { //read
+            printf("r");
+          } else printf("-");
+          if (sb.st_mode & S_IWGRP) { //write
+            printf("w");
+          } else printf("-");
+          if (sb.st_mode & S_IXGRP) { //execute
+            printf("x");
+          } else printf("-");
+          //others
+          if (sb.st_mode & S_IROTH) { //read
+            printf("r");
+          } else printf("-");
+          if (sb.st_mode & S_IWOTH) { //write
+            printf("w");
+          } else printf("-");
+          if (sb.st_mode & S_IXOTH) { //execute
+            printf("x");
+          } else printf("-");
+
+          //print the type
+          if (S_ISDIR(sb.st_mode)) {
+            printf("  d");
+            stats->dirs++;
+          } else if (S_ISLNK(sb.st_mode)) {
+            printf("  l");
+            stats->links++;
+          } else if (S_ISCHR(sb.st_mode)) {
+            printf("  c");
+          } else if (S_ISBLK(sb.st_mode)) {
+            printf("  b");
+          } else if (S_ISFIFO(sb.st_mode)) {
+            printf("  f");
+            stats->fifos++;
+          } else if (S_ISSOCK(sb.st_mode)) {
+            printf("  s");
+            stats->socks++;
+          }
+      }
+      printf("\n");
+      //print recursively
+      DIR *dir_tmp;
+      dir_tmp = opendir(full_path);
+      if (getNext(dir_tmp) != NULL) {
+        printf("  ");
+        processDir(full_path, depth + 1, stats, flags);
+      }
+      closedir(dir_tmp);
     }
   }
-  else if (flags & F_VERBOSE) {
-    while ((e = readdir(dir)) != NULL) {
-      //ignore special character
-      if (strcmp(".", e->d_name) == 0 || strcmp("..", e->d_name) == 0) continue;
-      //print the directory name
-      printf("%-54s\n", e->d_name);
-      //print the names of user and group
-      struct stat sb;
-      if (stat(dn, &sb) == -1) {
-        perror("Cannot stat file"); //error handling
-        continue;
-      }
-      struct passwd *userInfo = getpwuid(sb.st_uid);
-      struct group *groupInfo = getgrgid(sb.st_gid);
 
-      if (userInfo == NULL) {
-        perror("no uid"); //error handling
-        continue;
-      }
-      if (groupInfo == NULL) {
-        perror("no gid"); //error handling
-        continue;
-      }
+  if ((flags & F_SUMMARY) && (depth == 0)) {
+    printf("--------------------------------------------------------------------------------------------------------------\n");
+    if (flags & F_DIRONLY) {
+      if (stats->dirs == 1) printf("1 directory\n");
+      else printf("%d directories\n", stats->dirs);
+    } else {
+      if (stats->files == 1) printf("1 file, ", stats->files);
+      else printf("%d files, ", stats->files);
 
-      printf("%5s:%s", userInfo->pw_name, groupInfo->gr_name);
+      if (stats->dirs == 1) printf("1 directory, ", stats->dirs);
+      else printf("%d directories, ", stats->dirs);
 
-      //print the size
-      printf("%5d", sb.st_size);
+      if (stats->links == 1) printf("1 link, ", stats->links);
+      else printf("%d links, ", stats->links);
 
-      //print the permissions (read, write, excute)
-      //user
-      if (sb.st_mode & S_IRUSR) { //read
-        printf(" r");
-      } else printf(" -");
-      if (sb.st_mode & S_IWUSR) { //write
-        printf("w");
-      } else printf("-");
-      if (sb.st_mode & S_IXUSR) { //execute
-        printf("x");
-      } else printf("-");
-      //group
-      if (sb.st_mode & S_IRGRP) { //read
-        printf(" r");
-      } else printf(" -");
-      if (sb.st_mode & S_IWGRP) { //write
-        printf("w");
-      } else printf("-");
-      if (sb.st_mode & S_IXGRP) { //execute
-        printf("x");
-      } else printf("-");
-      //others
-      if (sb.st_mode & S_IROTH) { //read
-        printf(" r");
-      } else printf(" -");
-      if (sb.st_mode & S_IWOTH) { //write
-        printf("w");
-      } else printf("-");
-      if (sb.st_mode & S_IXOTH) { //execute
-        printf("x");
-      } else printf("-");
+      if (stats->fifos == 1) printf("1 pipe, ", stats->fifos);
+      else printf("%d pipes, ", stats->fifos);
 
-      //print the type
-      if (S_ISDIR(sb.st_mode)) {
-        printf("  d");
-
-      } else if (S_ISLNK(sb.st_mode)) {
-        printf("  l");
-      } else if (S_ISCHR(sb.st_mode)) {
-        printf("  c");
-      } else if (S_ISBLK(sb.st_mode)) {
-        printf("  b");
-      } else if (S_ISFIFO(sb.st_mode)) {
-        printf("  f");
-      } else if (S_ISSOCK(sb.st_mode)) {
-        printf("  s");
-      }
-
-      //recursively load lower directory
-      struct stat sb2;
-      char *nextPath;
-      strcpy(nextPath, dn);
-      strcat(nextPath, "/");
-      strcat(nextPath, e->d_name);
-
-      if (lstat(nextPath, &sb2) < 0) {
-        perror("function call failed"); //error handling
-      } else if (S_ISDIR(sb2.st_mode)) {
-        processDir(nextPath, depth + 1, stats, flags);
-      }
+      if (stats->socks == 1) printf("and 1 socket\n");
+      else printf("and %d sockets\n", stats->socks);
     }
   }
-  else if (flags & F_SUMMARY) {
-    while ((e = readdir(dir)) != NULL) {
-      //ignore special character
-      if (strcmp(".", e->d_name) == 0 || strcmp("..", e->d_name) == 0) continue;
-      //print the directory name
-      printf("%-54s\n", e->d_name);
-      //print the names of user and group
-      struct stat sb;
-      if (stat(dn, &sb) == -1) {
-        perror("Cannot stat file"); //error handling
-        continue;
-      }
-      struct passwd *userInfo = getpwuid(sb.st_uid);
-      struct group *groupInfo = getgrgid(sb.st_gid);
 
-      if (userInfo == NULL) {
-        perror("no uid"); //error handling
-        continue;
-      }
-      if (groupInfo == NULL) {
-        perror("no gid"); //error handling
-        continue;
-      }
-
-      printf("%5s:%s", userInfo->pw_name, groupInfo->gr_name);
-
-      //print the size
-      printf("%5d", sb.st_size);
-      stats->size += sb.st_size;
-
-      //print the permissions (read, write, excute)
-      //user
-      if (sb.st_mode & S_IRUSR) { //read
-        printf(" r");
-      } else printf(" -");
-      if (sb.st_mode & S_IWUSR) { //write
-        printf("w");
-      } else printf("-");
-      if (sb.st_mode & S_IXUSR) { //execute
-        printf("x");
-      } else printf("-");
-      //group
-      if (sb.st_mode & S_IRGRP) { //read
-        printf(" r");
-      } else printf(" -");
-      if (sb.st_mode & S_IWGRP) { //write
-        printf("w");
-      } else printf("-");
-      if (sb.st_mode & S_IXGRP) { //execute
-        printf("x");
-      } else printf("-");
-      //others
-      if (sb.st_mode & S_IROTH) { //read
-        printf(" r");
-      } else printf(" -");
-      if (sb.st_mode & S_IWOTH) { //write
-        printf("w");
-      } else printf("-");
-      if (sb.st_mode & S_IXOTH) { //execute
-        printf("x");
-      } else printf("-");
-
-      //print the type
-      if (S_ISDIR(sb.st_mode)) {
-        printf("  d");
-        stats->dirs++;
-      } else if (S_ISLNK(sb.st_mode)) {
-        printf("  l");
-        stats->links++;
-      } else if (S_ISCHR(sb.st_mode)) {
-        printf("  c");
-      } else if (S_ISBLK(sb.st_mode)) {
-        printf("  b");
-      } else if (S_ISFIFO(sb.st_mode)) {
-        printf("  f");
-        stats->fifos++;
-      } else if (S_ISSOCK(sb.st_mode)) {
-        printf("  s");
-        stats->socks++;
-      } else {
-        stats->files++;
-      }
-
-      //recursively load lower directory
-      struct stat sb2;
-      char *nextPath;
-      strcpy(nextPath, dn);
-      strcat(nextPath, "/");
-      strcat(nextPath, e->d_name);
-
-      if (lstat(nextPath, &sb2) < 0) {
-        perror("function call failed"); //error handling
-      } else if (S_ISDIR(sb2.st_mode)) {
-        processDir(nextPath, depth + 1, stats, flags);
-      }
-    }
-    
-  }
-
-  closedir(dir);
+  closedir(dn);
 }
 
 
@@ -410,13 +406,15 @@ int main(int argc, char *argv[])
   //   - if F_SUMMARY flag set: print summary & update statistics
   memset(&tstat, 0, sizeof(tstat));
   for (int i=0; i<ndir; i++) {
-    //calculate depth
-    char *ptr = directories[i];
-    int depth = 0;
-    while (*ptr != '\0') {
-      if (*ptr == '/') depth++;
-    }
-    processDir(directories[i], depth, &tstat, flags);
+    struct summary stats;
+    memset(&stats, 0, sizeof(stats));
+    processDir(directories[i], 0, &stats, flags);
+    tstat.files += stats.files;
+    tstat.dirs += stats.dirs;
+    tstat.fifos += stats.fifos;
+    tstat.links += stats.links;
+    tstat.socks += stats.socks;
+    tstat.size += stats.size;
   }
 
 
