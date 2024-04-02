@@ -122,7 +122,7 @@ void processDir(const char *dn, unsigned int depth, struct summary *stats, unsig
   }
 
   //sort
-  qsort(directories, directories + index, dirent_compare);
+  qsort(directories, index, sizeof(struct dirent *), dirent_compare);
   //print if dironly mode
   if (flags & F_DIRONLY) {
     for (int j=0; j<index; j++) {
@@ -314,7 +314,7 @@ void processDir(const char *dn, unsigned int depth, struct summary *stats, unsig
     }
   }
 
-  closedir(dn);
+  closedir(dir);
 }
 
 
