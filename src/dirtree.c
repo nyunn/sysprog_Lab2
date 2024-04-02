@@ -131,7 +131,7 @@ void processDir(const char *dn, unsigned int depth, struct summary *stats, unsig
       strcpy(full_path, dn);
       strcat(full_path, "/");
       strcat(full_path, directories[j]->d_name);
-      snprintf(full_path, sizeof(full_path), "%s/%s", dn, directories[j]->d_name);
+      //snprintf(full_path, sizeof(full_path), "%s/%s", dn, directories[j]->d_name);
       if (stat(full_path, &sb) == -1) {
           printf("Cannot stat file.\n");
           continue;
@@ -205,7 +205,10 @@ void processDir(const char *dn, unsigned int depth, struct summary *stats, unsig
     for (int j=0; j<index; j++) {
       struct stat sb;
       char full_path[256];
-      snprintf(full_path, sizeof(full_path), "%s/%s", dn, directories[j]->d_name);
+      strcpy(full_path, dn);
+      strcat(full_path, "/");
+      strcat(full_path, directories[j]->d_name);
+      //snprintf(full_path, sizeof(full_path), "%s/%s", dn, directories[j]->d_name);
       if (stat(full_path, &sb) == -1) {
           printf("Cannot stat file.\n");
           continue;
