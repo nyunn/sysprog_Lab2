@@ -108,7 +108,7 @@ void processDir(const char *dn, unsigned int depth, struct summary *stats, unsig
   struct dirent *directories[64];
 
   int index=0;
-  while ((e = readdir(dir)) != NULL) {
+  while ((e = readdir(dir)) != NULL && index < 64) {
     //ignore special character
     if (strcmp(".", e->d_name) == 0 || strcmp("..", e->d_name) == 0) continue;
     //save the directory entry
@@ -117,8 +117,8 @@ void processDir(const char *dn, unsigned int depth, struct summary *stats, unsig
 
   //print if summary mode
   if ((flags & F_SUMMARY) && (depth == 0)) {
-    printf("Name                                                                 User:Group           Size     Perms Type\n");
-    printf("--------------------------------------------------------------------------------------------------------------\n");
+    printf("Name                                                        User:Group           Size     Perms Type\n");
+    printf("----------------------------------------------------------------------------------------------------\n");
   }
 
   //sort
@@ -131,9 +131,8 @@ void processDir(const char *dn, unsigned int depth, struct summary *stats, unsig
       strcpy(full_path, dn);
       strcat(full_path, "/");
       strcat(full_path, directories[j]->d_name);
-      //snprintf(full_path, sizeof(full_path), "%s/%s", dn, directories[j]->d_name);
       if (stat(full_path, &sb) == -1) {
-          printf("Cannot stat file.\n");
+          printf("ERROR: Permission denied\n");
           continue;
       }
       if (S_ISDIR(sb.st_mode)) printf("%s", directories[j]->d_name);
@@ -144,11 +143,11 @@ void processDir(const char *dn, unsigned int depth, struct summary *stats, unsig
           struct group *groupInfo = getgrgid(sb.st_gid);
 
           if (userInfo == NULL) {
-            perror("Permission denied.\n"); //error handling
+            printf("Permission denied.\n"); //error handling
             continue;
           }
           if (groupInfo == NULL) {
-            perror("Permission denied.\n"); //error handling
+            printf("Permission denied.\n"); //error handling
             continue;
           }
 
@@ -208,9 +207,8 @@ void processDir(const char *dn, unsigned int depth, struct summary *stats, unsig
       strcpy(full_path, dn);
       strcat(full_path, "/");
       strcat(full_path, directories[j]->d_name);
-      //snprintf(full_path, sizeof(full_path), "%s/%s", dn, directories[j]->d_name);
       if (stat(full_path, &sb) == -1) {
-          printf("Cannot stat file.\n");
+          printf("ERROR: Permission denied\n");
           continue;
       }
 
@@ -221,11 +219,11 @@ void processDir(const char *dn, unsigned int depth, struct summary *stats, unsig
           struct group *groupInfo = getgrgid(sb.st_gid);
 
           if (userInfo == NULL) {
-            perror("Permission denied.\n"); //error handling
+            printf("Permission denied.\n"); //error handling
             continue;
           }
           if (groupInfo == NULL) {
-            perror("Permission denied.\n"); //error handling
+            printf("Permission denied.\n"); //error handling
             continue;
           }
 
@@ -298,7 +296,7 @@ void processDir(const char *dn, unsigned int depth, struct summary *stats, unsig
   }
 
   if ((flags & F_SUMMARY) && (depth == 0)) {
-    printf("--------------------------------------------------------------------------------------------------------------\n");
+    printf("----------------------------------------------------------------------------------------------------\n");
     if (flags & F_DIRONLY) {
       if (stats->dirs == 1) printf("1 directory\n");
       else printf("%d directories\n", stats->dirs);
