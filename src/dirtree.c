@@ -152,7 +152,7 @@ void processDir(const char *dn, unsigned int depth, struct summary *stats, unsig
           printf("%5s:%s", userInfo->pw_name, groupInfo->gr_name);
 
           //print the size
-          printf("%5d", sb.st_size);
+          printf("%5ld", sb.st_size);
 
           //print the permissions (read, write, excute)
           //user
@@ -226,7 +226,7 @@ void processDir(const char *dn, unsigned int depth, struct summary *stats, unsig
           printf("%5s:%s", userInfo->pw_name, groupInfo->gr_name);
 
           //print the size
-          printf("%5d", sb.st_size);
+          printf("%5ld", sb.st_size);
 
           //print the permissions (read, write, excute)
           //user
@@ -297,16 +297,16 @@ void processDir(const char *dn, unsigned int depth, struct summary *stats, unsig
       if (stats->dirs == 1) printf("1 directory\n");
       else printf("%d directories\n", stats->dirs);
     } else {
-      if (stats->files == 1) printf("1 file, ", stats->files);
+      if (stats->files == 1) printf("1 file, ");
       else printf("%d files, ", stats->files);
 
-      if (stats->dirs == 1) printf("1 directory, ", stats->dirs);
+      if (stats->dirs == 1) printf("1 directory, ");
       else printf("%d directories, ", stats->dirs);
 
-      if (stats->links == 1) printf("1 link, ", stats->links);
+      if (stats->links == 1) printf("1 link, ");
       else printf("%d links, ", stats->links);
 
-      if (stats->fifos == 1) printf("1 pipe, ", stats->fifos);
+      if (stats->fifos == 1) printf("1 pipe, ");
       else printf("%d pipes, ", stats->fifos);
 
       if (stats->socks == 1) printf("and 1 socket\n");
