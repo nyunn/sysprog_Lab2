@@ -108,7 +108,7 @@ void processDir(const char *dn, unsigned int depth, struct summary *stats, unsig
   struct dirent *directories[64];
 
   int index=0;
-  while ((e = readdir(dir) != NULL)) {
+  while ((e = readdir(dir)) != NULL) {
     //ignore special character
     if (strcmp(".", e->d_name) == 0 || strcmp("..", e->d_name) == 0) continue;
     //save the directory entry
@@ -118,7 +118,7 @@ void processDir(const char *dn, unsigned int depth, struct summary *stats, unsig
   //print if summary mode
   if ((flags & F_SUMMARY) && (depth == 0)) {
     printf("Name                                                                 User:Group           Size     Perms Type\n");
-    printf("--------------------------------------------------------------------------------------------------------------\n")
+    printf("--------------------------------------------------------------------------------------------------------------\n");
   }
 
   //sort
