@@ -105,7 +105,7 @@ void processDir(const char *dn, unsigned int depth, struct summary *stats, unsig
   // TODO
   DIR *dir = opendir(dn);
   if (dir == NULL) {
-    printf("ERROR: Permission denied\n");
+    printf("ERROR: Permission denied here\n");
     return;
   }
 
