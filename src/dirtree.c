@@ -104,11 +104,16 @@ void processDir(const char *dn, unsigned int depth, struct summary *stats, unsig
 {
   // TODO
   DIR *dir = opendir(dn);
+  if (dir == NULL) {
+    printf("ERROR: Permission denied\n");
+    return;
+  }
+
   struct dirent *e;
   struct dirent **directories = malloc(MAX_DIR*sizeof(struct dirent*));
 
   int index=0;
-  while ((e = readdir(dir)) != NULL && index < 64) {
+  while ((e = readdir(dir)) != NULL && index < MAX_DIR) {
     //ignore special character
     if (strcmp(".", e->d_name) == 0 || strcmp("..", e->d_name) == 0) continue;
     //save the directory entry
@@ -195,7 +200,9 @@ void processDir(const char *dn, unsigned int depth, struct summary *stats, unsig
       //print recursively
       DIR *dir_tmp;
       dir_tmp = opendir(full_path);
-      if (getNext(dir_tmp) != NULL) {
+      //struct dirent **subdirectories = malloc(MAX_DIR * sizeof(struct diretnt*));
+      while (getNext(dir_tmp) != NULL) {
+        printf("  ");
         processDir(full_path, depth + 1, stats, flags);
       }
       closedir(dir_tmp);
@@ -285,13 +292,16 @@ void processDir(const char *dn, unsigned int depth, struct summary *stats, unsig
       }
       printf("\n");
       //print recursively
-      DIR *dir_tmp;
-      dir_tmp = opendir(full_path);
-      if (getNext(dir_tmp) != NULL) {
-        printf("  ");
-        processDir(full_path, depth + 1, stats, flags);
+      if (S_ISDIR(sb.st_mode)) {
+
+        DIR *dir_tmp;
+        dir_tmp = opendir(full_path);
+        while (getNext(dir_tmp) != NULL) {
+          printf("  ");
+          processDir(full_path, depth + 1, stats, flags);
+        }
+        closedir(dir_tmp);
       }
-      closedir(dir_tmp);
     }
   }
 
