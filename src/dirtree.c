@@ -103,8 +103,6 @@ static int dirent_compare(const void *a, const void *b)
 void processDir(const char *dn, unsigned int depth, struct summary *stats, unsigned int flags)
 {
   // TODO
-
-  printf("%s", dn);
   DIR *dir = opendir(dn);
   if (dir == NULL) {
     printf("ERROR: Permission denied\n");
