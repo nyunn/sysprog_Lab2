@@ -3,8 +3,8 @@
 //
 /// @file
 /// @brief resursively traverse directory tree and list all entries
-/// @author <yourname>
-/// @studid <studentid>
+/// @author <jungyunOh>
+/// @studid <2022-19510>
 //--------------------------------------------------------------------------------------------------
 
 #define _GNU_SOURCE
@@ -105,7 +105,7 @@ void processDir(const char *dn, unsigned int depth, struct summary *stats, unsig
   // TODO
   DIR *dir = opendir(dn);
   struct dirent *e;
-  struct dirent *directories[64];
+  struct dirent **directories = malloc(MAX_DIR*sizeof(struct dirent*));
 
   int index=0;
   while ((e = readdir(dir)) != NULL && index < 64) {
@@ -131,7 +131,7 @@ void processDir(const char *dn, unsigned int depth, struct summary *stats, unsig
       strcpy(full_path, dn);
       strcat(full_path, "/");
       strcat(full_path, directories[j]->d_name);
-      if (stat(full_path, &sb) == -1) {
+      if (lstat(full_path, &sb) == -1) {
           printf("ERROR: Permission denied\n");
           continue;
       }
@@ -151,7 +151,7 @@ void processDir(const char *dn, unsigned int depth, struct summary *stats, unsig
             continue;
           }
 
-          printf("%5s:%s", userInfo->pw_name, groupInfo->gr_name);
+          printf("%54s:%s", userInfo->pw_name, groupInfo->gr_name);
 
           //print the size
           printf("%5ld", sb.st_size);
@@ -207,7 +207,7 @@ void processDir(const char *dn, unsigned int depth, struct summary *stats, unsig
       strcpy(full_path, dn);
       strcat(full_path, "/");
       strcat(full_path, directories[j]->d_name);
-      if (stat(full_path, &sb) == -1) {
+      if (lstat(full_path, &sb) == -1) {
           printf("ERROR: Permission denied\n");
           continue;
       }
@@ -227,7 +227,7 @@ void processDir(const char *dn, unsigned int depth, struct summary *stats, unsig
             continue;
           }
 
-          printf("%5s:%s", userInfo->pw_name, groupInfo->gr_name);
+          printf("%54s:%s", userInfo->pw_name, groupInfo->gr_name);
 
           //print the size
           printf("%5ld", sb.st_size);
@@ -320,7 +320,6 @@ void processDir(const char *dn, unsigned int depth, struct summary *stats, unsig
 
   closedir(dir);
 }
-
 
 /// @brief print program syntax and an optional error message. Aborts the program with EXIT_FAILURE
 ///
